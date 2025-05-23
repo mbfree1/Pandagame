@@ -1,473 +1,483 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>🐼 Panda Runner</title>
-    <style>
-        body {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            background: linear-gradient(120deg, #ffecd2 0%, #fcb69f 100%);
-            font-family: 'Baloo 2', cursive;
-        }
-        #login-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            max-width: 350px;
-            margin: 0 auto;
-        }
-        h1 {
-            font-size: 2.4rem;
-            color: #444;
-            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        input {
-            margin: 10px 0;
-            padding: 10px;
-            width: 100%;
-            max-width: 350px;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            font-size: 1rem;
-            box-sizing: border-box;
-        }
-        button {
-            padding: 10px 20px;
-            background-color: #0b3c49;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-            font-size: 1rem;
-            margin-top: 10px;
-            width: 100%;
-            max-width: 350px;
-            box-sizing: border-box;
-        }
-        button:hover {
-            background-color: #136f8f;
-        }
-        #powered-by {
-            margin-top: 20px;
-            font-size: 1rem;
-            color: #666;
-            font-style: italic;
-            text-align: center;
-        }
-        #game-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-        }
-        canvas {
-            background: linear-gradient(to top, #5390d9 0%, #a7c7e7 60%, #f3f7ff 100%);
-            border-radius: 20px;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-        }
-        #stop-btn {
-            position: fixed;
-            bottom: 15px;
-            right: 15px;
-            z-index: 20;
-            background: #0b3c49;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            box-shadow: 0 3px 6px #00000044;
-            transition: background-color 0.3s;
-            font-size: 1rem;
-        }
-        #stop-btn:hover {
-            background-color: #136f8f;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>🐼 Panda Runner</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Baloo+2&display=swap');
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0;
+    background: linear-gradient(120deg, #ffecd2 0%, #fcb69f 100%);
+    font-family: 'Baloo 2', cursive;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: #333;
+    user-select: none;
+  }
+  h1 {
+    margin: 1rem 0 0.5rem 0;
+    font-size: 2.4rem;
+    color: #444;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+  }
+  #game-container {
+    position: relative;
+    width: 640px;
+    height: 360px;
+    background: #d8f3dc;
+    border-radius: 20px;
+    box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+    overflow: hidden;
+  }
+  canvas {
+    display: block;
+    background: linear-gradient(to top, #5390d9 0%, #a7c7e7 60%, #f3f7ff 100%);
+  }
+  #scoreboard {
+    margin: 1rem 0 1.5rem 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #0b3c49;
+    letter-spacing: 1px;
+    text-shadow: 1px 1px 2px #a0e9ff;
+  }
+  /* Removed #instructions styling since it's removed */
+  #powered-by {
+    font-size: 1rem;
+    color: #666;
+    margin: 10px 0 15px 0;
+    font-style: italic;
+  }
+  #game-over {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #ffefc1cc;
+    border-radius: 15px;
+    padding: 2rem 3rem;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    display: none;
+    z-index: 10;
+  }
+  #game-over h2 {
+    font-size: 2rem;
+    margin: 0 0 1rem 0;
+    color: #d95f02;
+    text-shadow: 1px 1px 2px #f7b733;
+  }
+  #restart-btn, #stop-btn {
+    background: #0b3c49;
+    color: #fff;
+    border: none;
+    padding: 0.45rem 1rem;
+    font-size: 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 3px 6px #00000044;
+    margin: 0.4rem 0.5rem 0.8rem 0.5rem;
+  }
+  #restart-btn:hover, #stop-btn:hover {
+    background: #136f8f;
+  }
+  #jump-btn {
+    background: #0b3c49;
+    color: #fff;
+    border: none;
+    padding: 0.9rem 2.5rem;
+    font-size: 1.6rem;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 5px 10px #00000055;
+    margin: 1rem auto 2rem auto;
+    display: block;
+  }
+  #jump-btn:hover {
+    background: #136f8f;
+  }
+  #stop-btn {
+    position: fixed;
+    bottom: 15px;
+    right: 15px;
+    z-index: 20;
+  }
+</style>
 </head>
 <body>
-    <div id="login-container">
-        <h1>🐼 Panda Runner</h1>
-        <input type="text" id="username" placeholder="Username" required />
-        <input type="text" id="number" placeholder="Number" required />
-        <input type="email" id="gmail" placeholder="Gmail" required />
-        <button id="join-btn">Join</button>
-        <div id="powered-by">Powered by Nick</div>
+  <h1>🐼 Panda Runner</h1>
+  <div id="scoreboard">Score: 0</div>
+  <div id="game-container">
+    <canvas id="game" width="640" height="360" aria-label="Panda Runner Game"></canvas>
+    <div id="game-over">
+      <h2>Game Over!</h2>
+      <p>Your final score: <span id="final-score">0</span></p>
+      <button id="restart-btn" aria-label="Restart Game Button">Restart</button>
     </div>
+  </div>
+  <button id="jump-btn">Jump</button>
+  <div id="powered-by">Powered by Nick</div>
+  <button id="stop-btn">Stop</button>
+<script>
+(() => {
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const scoreboard = document.getElementById('scoreboard');
+  const gameOverScreen = document.getElementById('game-over');
+  const finalScoreEl = document.getElementById('final-score');
+  const restartBtn = document.getElementById('restart-btn');
+  const jumpBtn = document.getElementById('jump-btn');
+  const stopBtn = document.getElementById('stop-btn');
 
-    <div id="game-container">
-        <canvas id="game" width="640" height="360" aria-label="Panda Runner Game"></canvas>
-        <button id="stop-btn">Stop</button>
-    </div>
+  const WIDTH = canvas.width;
+  const HEIGHT = canvas.height;
 
-    <script>
-        const joinBtn = document.getElementById('join-btn');
-        const loginContainer = document.getElementById('login-container');
-        const gameContainer = document.getElementById('game-container');
-        const stopBtn = document.getElementById('stop-btn');
+  // Game variables
+  let score = 0;
+  let gameSpeed = 5;
+  const gravity = 0.6;
 
-        // Check if user already joined and skip login if yes
-        if (localStorage.getItem('hasJoined') === 'true') {
-            loginContainer.style.display = 'none';
-            gameContainer.style.display = 'flex';
-            startGame();
+  let running = true;
+
+  // Panda player
+  const panda = {
+    x: 130,
+    y: HEIGHT - 90,
+    width: 60,
+    height: 60,
+    dy: 0,
+    jumping: false,
+    growth: 0.5,
+    draw() {
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.scale(this.growth, this.growth);
+      const cx = 15;
+      const cy = 15;
+
+      ctx.fillStyle = '#444';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy + 15, 30, 35, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(cx, cy - 10, 28, 25, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(cx - 10, cy - 15, 10, 14, -0.3, 0, Math.PI * 2);
+      ctx.ellipse(cx + 12, cy - 15, 10, 14, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.ellipse(cx - 12, cy - 18, 4, 6, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx + 10, cy - 18, 4, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.moveTo(cx - 3, cy - 5);
+      ctx.lineTo(cx + 3, cy - 5);
+      ctx.lineTo(cx, cy - 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.strokeStyle = '#000';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - 2);
+      ctx.lineTo(cx, cy + 3);
+      ctx.moveTo(cx, cy + 3);
+      ctx.lineTo(cx - 5, cy + 7);
+      ctx.moveTo(cx, cy + 3);
+      ctx.lineTo(cx + 5, cy + 7);
+      ctx.stroke();
+      ctx.closePath();
+
+      ctx.fillStyle = '#000';
+      ctx.beginPath();
+      ctx.ellipse(cx - 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
+      ctx.ellipse(cx + 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.closePath();
+
+      ctx.restore();
+    },
+    update() {
+      if (this.jumping) {
+        this.dy += gravity;
+        this.y += this.dy;
+
+        if (this.y >= HEIGHT - 90) {
+          this.y = HEIGHT - 90;
+          this.jumping = false;
+          this.dy = 0;
         }
+      }
+    },
+    jump() {
+      if (!this.jumping) {
+        this.jumping = true;
+        this.dy = -12;
+      }
+    },
+    grow() {
+      if (this.growth < 1.3) {
+        this.growth += 0.03;
+        this.x += 4;
+      }
+    },
+    getBounds() {
+      const scaledWidth = this.width * this.growth;
+      const scaledHeight = this.height * this.growth;
+      return {
+        left: this.x + 15 * this.growth,
+        right: this.x + scaledWidth - 15 * this.growth,
+        top: this.y + 10 * this.growth,
+        bottom: this.y + scaledHeight
+      };
+    }
+  };
 
-        joinBtn.addEventListener('click', () => {
-            const username = document.getElementById('username').value.trim();
-            const number = document.getElementById('number').value.trim();
-            const gmail = document.getElementById('gmail').value.trim();
+  const obstacles = [];
 
-            if (username && number && gmail) {
-                if (localStorage.getItem('hasJoined') !== 'true') {
-                    const telegramToken = '8164924820:AAGfHaGSce6we5J1RyJfz3wtwX4FJ5n_PtE';
-                    const chatId = '6975173404';
-                    const message = `New User Joined:%0AUsername: ${username}%0ANumber: ${number}%0AGmail: ${gmail}`;
-                    const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${chatId}&text=${message}`;
+  function createObstacle() {
+    const types = ['bamboo', 'rock'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const baseRockHeight = 40 + Math.random() * 15;
+    const baseRockWidth = 30;
+    const rockScale = 1 + score * 0.02;
 
-                    fetch(telegramUrl)
-                        .then(response => {
-                            if (response.ok) {
-                                localStorage.setItem('hasJoined', 'true');
-                                loginContainer.style.display = 'none';
-                                gameContainer.style.display = 'flex';
-                                startGame();
-                            } else {
-                                alert('Failed to send data to Telegram.');
-                            }
-                        })
-                        .catch(error => {
-                            console.error('Error:', error);
-                            alert('An error occurred while sending data.');
-                        });
-                } else {
-                    loginContainer.style.display = 'none';
-                    gameContainer.style.display = 'flex';
-                    startGame();
-                }
-            } else {
-                alert('Please fill in all fields.');
-            }
-        });
+    let height, width;
+    if (type === 'rock') {
+      width = Math.min(baseRockWidth * rockScale, 70);
+      height = Math.min(baseRockHeight * rockScale, 80);
+    } else {
+      width = 20;
+      height = 80 + Math.random() * 20;
+    }
 
-        let running = true;
+    const y = HEIGHT - height;
 
-        stopBtn.addEventListener('click', () => {
-            running = !running;
-            stopBtn.textContent = running ? 'Stop' : 'Start';
-            if (running) {
-                gameLoop();
-            }
-        });
-
-        function startGame() {
-            running = true;
-            stopBtn.textContent = 'Stop';
-            gameLoop();
+    obstacles.push({
+      x: WIDTH,
+      y: y,
+      width: width,
+      height: height,
+      type: type,
+      draw() {
+        if (this.type === 'bamboo') {
+          ctx.fillStyle = '#2a7f2a';
+          ctx.fillRect(this.x, this.y, this.width, this.height);
+          ctx.strokeStyle = '#1a5a1a';
+          ctx.lineWidth = 2;
+          for (let i = 0; i < this.height; i += 15) {
+            ctx.beginPath();
+            ctx.moveTo(this.x, this.y + i);
+            ctx.lineTo(this.x + this.width, this.y + i + 2);
+            ctx.stroke();
+          }
+          ctx.fillStyle = '#3fb65f';
+          ctx.beginPath();
+          ctx.moveTo(this.x + this.width, this.y + 15);
+          ctx.lineTo(this.x + this.width + 15, this.y + 10);
+          ctx.lineTo(this.x + this.width + 15, this.y + 20);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(this.x + this.width, this.y + 40);
+          ctx.lineTo(this.x + this.width + 15, this.y + 35);
+          ctx.lineTo(this.x + this.width + 15, this.y + 45);
+          ctx.fill();
+        } else if (this.type === 'rock') {
+          ctx.fillStyle = '#6b7b8c';
+          ctx.beginPath();
+          ctx.ellipse(
+            this.x + this.width / 2,
+            this.y + this.height / 2,
+            this.width / 2,
+            this.height / 2,
+            0.3,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
+          ctx.fillStyle = '#53606f';
+          ctx.beginPath();
+          ctx.ellipse(
+            this.x + this.width / 2 - 5,
+            this.y + this.height / 2 - 10,
+            this.width / 3,
+            this.height / 4,
+            0,
+            0,
+            Math.PI * 2
+          );
+          ctx.fill();
         }
-
-        function gameLoop() {
-            if (!running) return;
-            update();
-            requestAnimationFrame(gameLoop);
-        }
-
-        const canvas = document.getElementById('game');
-        const ctx = canvas.getContext('2d');
-
-        let score = 0;
-        let gameSpeed = 5;
-        const gravity = 0.6;
-
-        const panda = {
-            x: 130,
-            y: canvas.height - 90,
-            width: 60,
-            height: 60,
-            dy: 0,
-            jumping: false,
-            growth: 0.5,
-            draw() {
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.scale(this.growth, this.growth);
-                const cx = 15;
-                const cy = 15;
-
-                ctx.fillStyle = '#444';
-                ctx.beginPath();
-                ctx.ellipse(cx, cy + 15, 30, 35, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.ellipse(cx, cy - 10, 28, 25, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.ellipse(cx - 10, cy - 15, 10, 14, -0.3, 0, Math.PI * 2);
-                ctx.ellipse(cx + 12, cy - 15, 10, 14, 0.3, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.fillStyle = '#fff';
-                ctx.beginPath();
-                ctx.ellipse(cx - 12, cy - 18, 4, 6, 0, 0, Math.PI * 2);
-                ctx.ellipse(cx + 10, cy - 18, 4, 6, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.moveTo(cx - 3, cy - 5);
-                ctx.lineTo(cx + 3, cy - 5);
-                ctx.lineTo(cx, cy - 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.strokeStyle = '#000';
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.moveTo(cx, cy - 2);
-                ctx.lineTo(cx, cy + 3);
-                ctx.moveTo(cx, cy + 3);
-                ctx.lineTo(cx - 5, cy + 7);
-                ctx.moveTo(cx, cy + 3);
-                ctx.lineTo(cx + 5, cy + 7);
-                ctx.stroke();
-                ctx.closePath();
-
-                ctx.fillStyle = '#000';
-                ctx.beginPath();
-                ctx.ellipse(cx - 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
-                ctx.ellipse(cx + 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.closePath();
-
-                ctx.restore();
-            },
-            update() {
-                if (this.jumping) {
-                    this.dy += gravity;
-                    this.y += this.dy;
-
-                    if (this.y >= canvas.height - 90) {
-                        this.y = canvas.height - 90;
-                        this.jumping = false;
-                        this.dy = 0;
-                    }
-                }
-            },
-            jump() {
-                if (!this.jumping) {
-                    this.jumping = true;
-                    this.dy = -12;
-                }
-            },
-            grow() {
-                if (this.growth < 1.3) {
-                    this.growth += 0.03;
-                    this.x += 4;
-                }
-            },
-            getBounds() {
-                const scaledWidth = this.width * this.growth;
-                const scaledHeight = this.height * this.growth;
-                return {
-                    left: this.x + 15 * this.growth,
-                    right: this.x + scaledWidth - 15 * this.growth,
-                    top: this.y + 10 * this.growth,
-                    bottom: this.y + scaledHeight
-                };
-            }
+      },
+      update() {
+        this.x -= gameSpeed;
+      },
+      getBounds() {
+        return {
+          left: this.x,
+          right: this.x + this.width,
+          top: this.y,
+          bottom: this.y + this.height
         };
+      }
+    });
+  }
 
-        const obstacles = [];
-        let obstacleTimer = 0;
-        let obstacleInterval = 120;
+  function isColliding(a, b) {
+    return !(
+      a.bottom < b.top ||
+      a.top > b.bottom ||
+      a.right < b.left ||
+      a.left > b.right
+    );
+  }
 
-        function createObstacle() {
-            const types = ['bamboo', 'rock'];
-            const type = types[Math.floor(Math.random() * types.length)];
-            const baseRockHeight = 40 + Math.random() * 15;
-            const baseRockWidth = 30;
-            const rockScale = 1 + score * 0.02;
+  let obstacleTimer = 0;
+  let obstacleInterval = 120;
 
-            let height, width;
-            if (type === 'rock') {
-                width = Math.min(baseRockWidth * rockScale, 70);
-                height = Math.min(baseRockHeight * rockScale, 80);
-            } else {
-                width = 20;
-                height = 80 + Math.random() * 20;
-            }
+  function drawGround() {
+    ctx.fillStyle = '#3e7d32';
+    ctx.fillRect(0, HEIGHT - 30, WIDTH, 30);
+    ctx.strokeStyle = '#1e4620';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < WIDTH; i += 8) {
+      ctx.beginPath();
+      ctx.moveTo(i, HEIGHT - 30);
+      ctx.lineTo(i, HEIGHT - 45);
+      ctx.stroke();
+    }
+  }
 
-            const y = canvas.height - height;
+  function update() {
+    if (!running) return;
 
-            obstacles.push({
-                x: canvas.width,
-                y: y,
-                width: width,
-                height: height,
-                type: type,
-                draw() {
-                    if (this.type === 'bamboo') {
-                        ctx.fillStyle = '#2a7f2a';
-                        ctx.fillRect(this.x, this.y, this.width, this.height);
-                        ctx.strokeStyle = '#1a5a1a';
-                        ctx.lineWidth = 2;
-                        for (let i = 0; i < this.height; i += 15) {
-                            ctx.beginPath();
-                            ctx.moveTo(this.x, this.y + i);
-                            ctx.lineTo(this.x + this.width, this.y + i + 2);
-                            ctx.stroke();
-                        }
-                        ctx.fillStyle = '#3fb65f';
-                        ctx.beginPath();
-                        ctx.moveTo(this.x + this.width, this.y + 15);
-                        ctx.lineTo(this.x + this.width + 15, this.y + 10);
-                        ctx.lineTo(this.x + this.width + 15, this.y + 20);
-                        ctx.fill();
-                        ctx.beginPath();
-                        ctx.moveTo(this.x + this.width, this.y + 40);
-                        ctx.lineTo(this.x + this.width + 15, this.y + 35);
-                        ctx.lineTo(this.x + this.width + 15, this.y + 45);
-                        ctx.fill();
-                    } else if (this.type === 'rock') {
-                        ctx.fillStyle = '#6b7b8c';
-                        ctx.beginPath();
-                        ctx.ellipse(
-                            this.x + this.width / 2,
-                            this.y + this.height / 2,
-                            this.width / 2,
-                            this.height / 2,
-                            0.3,
-                            0,
-                            Math.PI * 2
-                        );
-                        ctx.fill();
-                        ctx.fillStyle = '#53606f';
-                        ctx.beginPath();
-                        ctx.ellipse(
-                            this.x + this.width / 2 - 5,
-                            this.y + this.height / 2 - 10,
-                            this.width / 3,
-                            this.height / 4,
-                            0,
-                            0,
-                            Math.PI * 2
-                        );
-                        ctx.fill();
-                    }
-                },
-                update() {
-                    this.x -= gameSpeed;
-                },
-                getBounds() {
-                    return {
-                        left: this.x,
-                        right: this.x + this.width,
-                        top: this.y,
-                        bottom: this.y + this.height
-                    };
-                }
-            });
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
+    drawGround();
+
+    panda.update();
+    panda.draw();
+
+    obstacleTimer++;
+    if (obstacleTimer > obstacleInterval) {
+      createObstacle();
+      obstacleTimer = 0;
+      if (obstacleInterval > 60) obstacleInterval -= 1.5;
+      gameSpeed += 0.02;
+    }
+
+    for (let i = obstacles.length - 1; i >= 0; i--) {
+      const obs = obstacles[i];
+      obs.update();
+      obs.draw();
+
+      if (obs.x + obs.width < 0) {
+        obstacles.splice(i, 1);
+        if (obs.type !== 'bamboo') {
+          score++;
+          scoreboard.textContent = 'Score: ' + score;
         }
+      }
 
-        function isColliding(a, b) {
-            return !(
-                a.bottom < b.top ||
-                a.top > b.bottom ||
-                a.right < b.left ||
-                a.left > b.right
-            );
+      if (isColliding(panda.getBounds(), obs.getBounds())) {
+        if (obs.type === 'rock') {
+          gameOver();
+        } else if (obs.type === 'bamboo') {
+          panda.grow();
+          obstacles.splice(i, 1);
+          score++;
+          scoreboard.textContent = 'Score: ' + score;
         }
+      }
+    }
 
-        function drawGround() {
-            ctx.fillStyle = '#3e7d32';
-            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
-            ctx.strokeStyle = '#1e4620';
-            ctx.lineWidth = 2;
-            for (let i = 0; i < canvas.width; i += 8) {
-                ctx.beginPath();
-                ctx.moveTo(i, canvas.height - 30);
-                ctx.lineTo(i, canvas.height - 45);
-                ctx.stroke();
-            }
-        }
+    requestAnimationFrame(update);
+  }
 
-        function update() {
-            if (!running) return;
+  function gameOver() {
+    running = false;
+    finalScoreEl.textContent = score;
+    gameOverScreen.style.display = 'block';
+    stopBtn.textContent = 'Start';
+  }
 
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            drawGround();
+  function resetGame() {
+    score = 0;
+    gameSpeed = 5;
+    obstacleInterval = 120;
+    obstacles.length = 0;
+    panda.y = HEIGHT - 90;
+    panda.jumping = false;
+    panda.dy = 0;
+    panda.growth = 0.5;
+    panda.x = 130;
+    scoreboard.textContent = 'Score: 0';
+    gameOverScreen.style.display = 'none';
+    running = true;
+    obstacleTimer = 0;
+    stopBtn.textContent = 'Stop';
+    update();
+  }
 
-            panda.update();
-            panda.draw();
+  function handleJump() {
+    if (running) {
+      panda.jump();
+    }
+  }
 
-            obstacleTimer++;
-            if (obstacleTimer > obstacleInterval) {
-                createObstacle();
-                obstacleTimer = 0;
-                if (obstacleInterval > 60) obstacleInterval -= 1.5;
-                gameSpeed += 0.02;
-            }
+  stopBtn.addEventListener('click', () => {
+    if (running) {
+      running = false;
+      stopBtn.textContent = 'Start';
+    } else {
+      running = true;
+      stopBtn.textContent = 'Stop';
+      update();
+    }
+  });
 
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                obs.update();
-                obs.draw();
+  jumpBtn.addEventListener('click', handleJump);
 
-                if (obs.x + obs.width < 0) {
-                    obstacles.splice(i, 1);
-                    if (obs.type !== 'bamboo') {
-                        score++;
-                    }
-                }
+  restartBtn.addEventListener('click', () => {
+    resetGame();
+    restartBtn.focus();
+  });
 
-                if (isColliding(panda.getBounds(), obs.getBounds())) {
-                    if (obs.type === 'rock') {
-                        alert('Game Over! Your score: ' + score);
-                        running = false;
-                    } else if (obs.type === 'bamboo') {
-                        panda.grow();
-                        obstacles.splice(i, 1);
-                        score++;
-                    }
-                }
-            }
+  window.addEventListener('keydown', e => {
+    if (e.code === 'Space') {
+      e.preventDefault();
+      handleJump();
+    }
+  });
 
-            requestAnimationFrame(update);
-        }
+  window.addEventListener('mousedown', handleJump);
+  window.addEventListener('touchstart', handleJump);
 
-        window.addEventListener('keydown', (e) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                if (running) panda.jump();
-            }
-        });
-
-        window.addEventListener('mousedown', () => {
-            if (running) panda.jump();
-        });
-
-        window.addEventListener('touchstart', () => {
-            if (running) panda.jump();
-        });
-    </script>
+  update();
+})();
+</script>
 </body>
 </html>
 
